@@ -97,7 +97,7 @@ def compute_features(
     subdomains = [_extract_subdomain(qname) for qname in qnames]
     non_empty_subdomains = [value for value in subdomains if value]
 
-    iats = _inter_arrival_times_ms(queries)
+    iats = _inter_arrival_times(packets)
     payload_lengths = [packet.payload_len for packet in packets]
     qname_lengths = [len(qname) for qname in qnames]
     label_counts = [len(_labels(qname)) for qname in qnames]
@@ -106,19 +106,16 @@ def compute_features(
     full_entropies = [_string_entropy(qname) for qname in qnames]
     subdomain_entropies = [_string_entropy(subdomain) for subdomain in non_empty_subdomains]
     query_type_counts = [packet.query_type for packet in queries]
-    answer_counts = [packet.answer_count for packet in responses]
-    rdata_lengths = [packet.rdata_len for packet in responses]
     response_codes = [packet.response_code for packet in responses if packet.response_code is not None]
 
     duration_sec = max(packets[-1].timestamp - packets[0].timestamp, 0.0)
-    rate_window = float(window_size) if window_size > 0 else max(duration_sec, 1.0)
 
     features = {
         "n_packets": float(n_packets),
         "duration_sec": duration_sec,
-        "query_rate": _safe_divide(n_queries, rate_window),
+        "query_rate": _safe_divide(n_packets, duration_sec) if duration_sec > 0 else float(n_packets),
         "unique_qnames": float(len(set(qnames))),
-        "unique_subdomains": float(len(set(non_empty_subdomains))),
+        "unique_subdomains": float(len(set(subdomains))),
         "unique_qname_ratio": _safe_divide(len(set(qnames)), n_queries),
         "iat_mean": _safe_mean(iats),
         "iat_std": _safe_std(iats),
@@ -150,19 +147,19 @@ def compute_features(
         "avg_consonant_ratio": _safe_mean([_consonant_ratio(qname) for qname in qnames]),
         "avg_unique_char_ratio": _safe_mean([_unique_char_ratio(qname) for qname in qnames]),
         "n_responses": float(n_responses),
-        "avg_answer_count": _safe_mean(answer_counts),
-        "avg_rdata_len": _safe_mean(rdata_lengths),
+        "avg_answer_count": _safe_mean([packet.answer_count for packet in packets]),
+        "avg_rdata_len": _safe_mean([packet.rdata_len for packet in packets]),
         "nxdomain_frac": _safe_divide(sum(1 for code in response_codes if code == 3), len(response_codes)),
     }
 
     return {name: float(features.get(name, 0.0)) for name in EXPECTED_FEATURES}
 
 
-def _inter_arrival_times_ms(queries: list[DNSPacketRecord]) -> list[float]:
-    if len(queries) < 2:
+def _inter_arrival_times(packets: list[DNSPacketRecord]) -> list[float]:
+    if len(packets) < 2:
         return []
-    timestamps = [packet.timestamp for packet in queries]
-    return [(curr - prev) * 1000.0 for prev, curr in zip(timestamps, timestamps[1:])]
+    timestamps = sorted(packet.timestamp for packet in packets)
+    return [(curr - prev) for prev, curr in zip(timestamps, timestamps[1:])]
 
 
 def _extract_subdomain(qname: str) -> str:

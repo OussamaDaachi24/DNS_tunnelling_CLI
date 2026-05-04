@@ -1,0 +1,3 @@
+- update the model : remove or replace the logistic regressor
+- lower the threshold: 30% or 40% instead of 50% 
+- update the tool : signal the user when detecting a tunnel

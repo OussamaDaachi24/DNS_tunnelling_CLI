@@ -102,10 +102,6 @@ def _normalize_packets(packets: Iterable[object]) -> list[DNSPacketRecord]:
 
 
 def _extract_record(packet: object) -> Optional[DNSPacketRecord]:
-    if DNS not in packet:
-        return None
-
-    dns_layer = packet[DNS]
     network_layer = packet.getlayer(IP) or packet.getlayer(IPv6)
     if network_layer is None:
         return None
@@ -116,7 +112,8 @@ def _extract_record(packet: object) -> Optional[DNSPacketRecord]:
 
     src_port = int(getattr(transport_layer, "sport", 0))
     dst_port = int(getattr(transport_layer, "dport", 0))
-    if src_port != DNS_PORT and dst_port != DNS_PORT:
+    dns_layer = _coerce_dns_layer(packet, transport_layer, src_port, dst_port)
+    if dns_layer is None:
         return None
 
     src_ip = str(network_layer.src)
@@ -149,6 +146,49 @@ def _extract_record(packet: object) -> Optional[DNSPacketRecord]:
         flags_tc=bool(getattr(dns_layer, "tc", 0)),
         flags_ra=bool(getattr(dns_layer, "ra", 0)),
     )
+
+
+def _coerce_dns_layer(
+    packet: object,
+    transport_layer: object,
+    src_port: int,
+    dst_port: int,
+) -> Optional[DNS]:
+    if DNS in packet:
+        return packet[DNS]
+
+    # Fast path keeps the common case cheap, but we also support DNS payloads on
+    # non-standard ports because several tunneling tools avoid UDP/TCP 53.
+    payload = getattr(transport_layer, "payload", None)
+    payload_bytes = bytes(payload) if payload is not None else b""
+    if not payload_bytes:
+        return None
+
+    if src_port != DNS_PORT and dst_port != DNS_PORT and len(payload_bytes) < 12:
+        return None
+
+    try:
+        candidate = DNS(payload_bytes)
+    except Exception:
+        return None
+
+    if not _looks_like_dns(candidate):
+        return None
+    return candidate
+
+
+def _looks_like_dns(dns_layer: DNS) -> bool:
+    opcode = int(getattr(dns_layer, "opcode", 0) or 0)
+    qdcount = int(getattr(dns_layer, "qdcount", 0) or 0)
+    ancount = int(getattr(dns_layer, "ancount", 0) or 0)
+    nscount = int(getattr(dns_layer, "nscount", 0) or 0)
+    arcount = int(getattr(dns_layer, "arcount", 0) or 0)
+
+    if opcode > 15:
+        return False
+    if qdcount == 0 and ancount == 0 and nscount == 0 and arcount == 0:
+        return False
+    return True
 
 
 def _extract_qname(dns_layer: DNS) -> str:
