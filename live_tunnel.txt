@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-05-08T19:17:47.665177Z",
+  "mode": "live",
+  "interface": "Wi-Fi",
+  "pcap": null,
+  "duration_sec": 30,
+  "threshold": 0.4,
+  "window_size_sec": 10,
+  "windows": [
+    {
+      "src_ip": "10.80.235.21",
+      "window_id": 0,
+      "num_packets": 585,
+      "decision": "TUNNEL",
+      "p_tunnel": 0.7684120342628383,
+      "p_benign": 0.2315879657371616,
+      "base_probs": {
+        "lr": 0.9999949477651614,
+        "rf": 0.5610555555555555,
+        "svm": 0.9515420781750811
+      }
+    },
+    {
+      "src_ip": "10.80.235.21",
+      "window_id": 1,
+      "num_packets": 749,
+      "decision": "TUNNEL",
+      "p_tunnel": 0.6154737921516797,
+      "p_benign": 0.38452620784832037,
+      "base_probs": {
+        "lr": 0.9999981264135493,
+        "rf": 0.5643888888888888,
+        "svm": 0.3331192644153915
+      }
+    },
+    {
+      "src_ip": "10.80.235.21",
+      "window_id": 2,
+      "num_packets": 478,
+      "decision": "TUNNEL",
+      "p_tunnel": 0.7716423828066552,
+      "p_benign": 0.2283576171933449,
+      "base_probs": {
+        "lr": 0.9999971785044858,
+        "rf": 0.5493888888888889,
+        "svm": 0.987794574944357
+      }
+    }
+  ]
+}

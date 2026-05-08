@@ -19,7 +19,7 @@ def format_table(results: list[dict[str, Any]]) -> str:
         ("P(tunnel)", "p_tunnel"),
         ("LR", ("base_probs", "lr")),
         ("RF", ("base_probs", "rf")),
-        ("GB", ("base_probs", "gb")),
+        ("SVM", ("base_probs", "svm")),
     ]
 
     rows = []
@@ -33,7 +33,7 @@ def format_table(results: list[dict[str, Any]]) -> str:
                 f"{float(result['p_tunnel']):.4f}",
                 f"{float(result['base_probs'].get('lr', 0.0)):.4f}",
                 f"{float(result['base_probs'].get('rf', 0.0)):.4f}",
-                f"{float(result['base_probs'].get('gb', 0.0)):.4f}",
+                f"{float(result['base_probs'].get('svm', 0.0)):.4f}",
             ]
         )
 
@@ -72,7 +72,7 @@ def format_csv(results: list[dict[str, Any]]) -> str:
         "p_benign",
         "lr_prob",
         "rf_prob",
-        "gb_prob",
+        "svm_prob",
     ]
     writer = csv.DictWriter(buffer, fieldnames=fieldnames)
     writer.writeheader()
@@ -87,7 +87,7 @@ def format_csv(results: list[dict[str, Any]]) -> str:
                 "p_benign": f"{float(result['p_benign']):.4f}",
                 "lr_prob": f"{float(result['base_probs'].get('lr', 0.0)):.4f}",
                 "rf_prob": f"{float(result['base_probs'].get('rf', 0.0)):.4f}",
-                "gb_prob": f"{float(result['base_probs'].get('gb', 0.0)):.4f}",
+                "svm_prob": f"{float(result['base_probs'].get('svm', 0.0)):.4f}",
             }
         )
     return buffer.getvalue()
